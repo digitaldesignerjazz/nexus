@@ -1,0 +1,76 @@
+version: '3.8'
+
+# Nexus Yggdrasil Mesh Node
+# Docker Compose for running Yggdrasil as the decentralized mesh networking layer.
+# Supports development, testing, AI agent nodes, and hardware-adjacent deployments.
+#
+# Prerequisites:
+# - Docker & Docker Compose
+# - Customize config/yggdrasil.conf first (copy from yggdrasil.example.conf)
+# - For production Nexus meshes: strongly set AllowedPublicKeys and use TLS listeners
+#
+# Usage:
+#   cp ../yggdrasil.example.conf config/yggdrasil.conf   # adjust peers & security
+#   docker compose up -d
+#   docker compose logs -f yggdrasil
+#
+# Notes:
+# - Privileged + /dev/net/tun required for TUN device creation.
+# - Persistent config & generated keys via volume.
+# - Healthcheck included.
+# - For multi-node testing: run on separate hosts or with different configs and peer via static entries.
+# - Optional: Add a Tor sidecar or logging/monitoring container.
+
+services:
+  yggdrasil:
+    # Use official or community image. If no pre-built image fits perfectly,
+    # build from https://github.com/yggdrasil-network/yggdrasil-go or use a
+    # working community image (verify checksums). Example uses a common pattern.
+    # Alternative: build:
+    #   build:
+    #     context: .
+    #     dockerfile: Dockerfile.yggdrasil
+    image: yggdrasilnetwork/yggdrasil:latest   # Verify current official/community image
+    container_name: nexus-yggdrasil
+    restart: unless-stopped
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ./config:/etc/yggdrasil
+      # Optional: persistent logs or additional data
+      # - ./data:/var/lib/yggdrasil
+    networks:
+      - nexus-mesh
+    healthcheck:
+      test: ["CMD", "yggdrasil", "-useconffile", "/etc/yggdrasil/yggdrasil.conf", "-status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    # If your image uses a different entrypoint or you want to pass flags:
+    # command: ["yggdrasil", "-useconffile", "/etc/yggdrasil/yggdrasil.conf", "-autopeer"]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  nexus-mesh:
+    driver: bridge
+    # For advanced setups consider macvlan or host networking for better performance
+    # on hardware-adjacent nodes.
+
+# Optional sidecar examples (uncomment as needed):
+#
+#   tor-proxy:
+#     image: torproject/tor
+#     # ... configure to provide SOCKS for Yggdrasil peering over Tor
+#
+#   monitor:
+#     image: prom/prometheus
+#     # ... scrape Yggdrasil metrics or logs if exposed
