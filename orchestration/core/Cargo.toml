@@ -1,0 +1,22 @@
+[package]
+name = "nexus-orchestrator"
+version = "0.1.0"
+authors = ["Sven Normen <digitaldesignerjazz@users.noreply.github.com>"]
+edition = "2021"
+license = "Apache-2.0"
+description = "Nexus Central Orchestration Hub — Rust core (Phase 1 skeleton)"
+repository = "https://github.com/digitaldesignerjazz/nexus"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+clap = { version = "4.0", features = ["derive"] }
+thiserror = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
