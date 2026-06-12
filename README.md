@@ -49,7 +49,29 @@ See python/README.md for running the actual Python prototypes.
 pip install -r requirements-dev.txt
 ```
 
-This installs `hypothesis` (required for property-based testing of the Hyperspace Link Quality Oracle) along with other recommended development tools.
+This installs `hypothesis` (for property-based testing) and `pre-commit`.
+
+### Setting Up Pre-commit Hooks
+
+Pre-commit hooks help maintain code quality automatically before every commit.
+
+```bash
+# Install pre-commit (already included in requirements-dev.txt)
+pip install pre-commit
+
+# Install the git hooks
+pre-commit install
+```
+
+Now, every time you run `git commit`, the following checks will run automatically:
+- **ruff** (linting + import sorting)
+- **black** (code formatting)
+- Basic checks (trailing whitespace, end-of-file, merge conflicts, private keys, etc.)
+
+To run all hooks manually on all files:
+```bash
+pre-commit run --all-files
+```
 
 ### Running Tests
 
@@ -98,7 +120,7 @@ To be determined.
 
 *"The Nexus is not just code — it is the living interconnection of ideas, people, machines, and dreams."*
 
-**Last Updated**: With actual Python + ecosystem state and development tooling — June 2026
+**Last Updated**: With pre-commit hooks and development tooling — June 2026
 
 (Previous vision text preserved below for continuity.)
 
