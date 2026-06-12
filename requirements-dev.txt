@@ -1,0 +1,13 @@
+# Development dependencies for the Nexus project
+# Install with: pip install -r requirements-dev.txt
+
+# Property-based testing for the Hyperspace Link Quality Oracle
+# and future components
+hypothesis>=6.100
+
+# Recommended additional dev tools (uncomment as needed)
+# pytest>=8.0
+# pytest-cov
+# black
+# ruff
+# mypy
