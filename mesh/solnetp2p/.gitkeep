@@ -1,0 +1,7 @@
+# SolNetP2P Submodule
+
+This directory contains the SolNetP2P repository as a git submodule.
+
+See: https://github.com/digitaldesignerjazz/solnetp2p
+
+Added as the primary P2P/mesh networking layer for Nexus (successor to legacy mesh/yggdrasil/).
