@@ -41,6 +41,65 @@ See python/ for the reference code matching this actual state.
 
 See python/README.md for running the actual Python prototypes.
 
+## Development & Testing
+
+### Installing Development Dependencies
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+This installs `hypothesis` (for property-based testing) and `pre-commit`.
+
+### Setting Up Pre-commit Hooks
+
+Pre-commit hooks help maintain code quality automatically before every commit.
+
+```bash
+# Install pre-commit (already included in requirements-dev.txt)
+pip install pre-commit
+
+# Install the git hooks
+pre-commit install
+```
+
+Now, every time you run `git commit`, the following checks will run automatically:
+- **ruff** (linting + import sorting)
+- **black** (code formatting)
+- Basic checks (trailing whitespace, end-of-file, merge conflicts, private keys, etc.)
+
+To run all hooks manually on all files:
+```bash
+pre-commit run --all-files
+```
+
+### Running Tests
+
+The test suite lives in `python/tests/`. To run the full suite for the **Hyperspace Link Quality Oracle** (classic + property-based tests):
+
+```bash
+cd python
+python -m pytest tests/test_hyperspace_link_quality_oracle.py -v
+```
+
+Or run directly:
+
+```bash
+python python/tests/test_hyperspace_link_quality_oracle.py
+```
+
+**Note**: Property-based tests (powered by Hypothesis) will be automatically skipped if the package is not installed. They validate critical invariants such as:
+- Quality scores always staying within [0, 100]
+- Emotional resonance clamped to [-1.0, 1.0]
+- Consistent state after arbitrary sequences of updates
+- Correct sorting and bounding in `rank_links()`
+
+These tests give strong confidence when evolving the oracle or integrating it with the orchestrator and emotional agent swarms.
+
+### Contributing
+
+Contributions that align with the vision of resilient, emotionally-aware, self-evolving decentralized systems are welcome. Please open issues or pull requests on the relevant feature branches.
+
 ## Current Status
 
 **Actual Running State**: Python prototypes + full cross-repo integrations (solnet hyperspace health, orion constellations, lyra emotions, fluffy agent support) are the live implementation. Rust core and additional docs in progress.
@@ -61,8 +120,8 @@ To be determined.
 
 *"The Nexus is not just code — it is the living interconnection of ideas, people, machines, and dreams."*
 
-**Last Updated**: With actual Python + ecosystem state — June 2026
+**Last Updated**: With pre-commit hooks and development tooling — June 2026
 
 (Previous vision text preserved below for continuity.)
 
---- (original vision text follows in full repo) 
+--- (original vision text follows in full repo)
