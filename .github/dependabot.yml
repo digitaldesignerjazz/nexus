@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # GitHub Actions — keep the CI/CD lattice itself current
+  # GitHub Actions — keep the CI/CD lattice itself current and secure
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -11,11 +11,19 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
+      - "security"
       - "github-actions"
       - "nexus-ci"
     commit-message:
       prefix: "ci"
       include: "scope"
+    groups:
+      actions-security:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Rust orchestration core
   - package-ecosystem: "cargo"
@@ -28,20 +36,20 @@ updates:
     open-pull-requests-limit: 8
     labels:
       - "dependencies"
+      - "security"
       - "rust"
       - "orchestration"
     commit-message:
       prefix: "deps"
       include: "scope"
-    # Allow minor and patch updates freely; major updates still create PRs for review
+    # Major version bumps remain manual while the core is still forming.
+    # Security updates (even major) will still be proposed by GitHub's security alerts.
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
-        # Comment out the ignore block above when the core stabilizes and you want major bumps too
 
   # Python reference layer (prepared)
-  # Currently no requirements.txt / pyproject.toml / Pipfile at root or in python/.
-  # Once a dependency file is added, Dependabot will automatically begin watching.
+  # Dormant until a requirements*.txt, pyproject.toml, or Pipfile appears in /python
   - package-ecosystem: "pip"
     directory: "/python"
     schedule:
@@ -52,9 +60,9 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
+      - "security"
       - "python"
       - "reference-layer"
     commit-message:
       prefix: "deps"
       include: "scope"
-    # This entry remains dormant until a requirements*.txt, setup.py, or pyproject.toml appears in /python
