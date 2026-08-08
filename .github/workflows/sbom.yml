@@ -1,0 +1,33 @@
+name: SBOM
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-sbom:
+    name: Generate Software Bill of Materials
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: nexus-sbom.cdx.json
+          upload-artifact: true
+          artifact-name: nexus-sbom
+
+      - name: Upload SBOM as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-sbom
+          path: nexus-sbom.cdx.json
+          retention-days: 30
