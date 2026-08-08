@@ -41,6 +41,17 @@ Instead, report privately:
 - Security-related dependency updates receive priority attention
 - Critical vulnerabilities in the supported versions will be addressed as quickly as possible
 
+## Supply Chain Security
+
+The Nexus treats its own build and dependency pipeline as part of the trusted surface:
+
+- **Dependency Review** runs on every pull request and fails on high or critical severity findings.
+- **SBOM (Software Bill of Materials)** is generated automatically on pushes to `main` (CycloneDX format) and retained as a workflow artifact.
+- **CodeQL** continuously analyzes both the Python reference layer and the Rust orchestration core.
+- **Dependabot** keeps GitHub Actions, Cargo, and (when present) Python dependencies under observation.
+
+These controls reduce the risk of compromised dependencies or malicious workflow changes entering the lattice.
+
 ## Scope Notes
 
 This policy primarily covers the code and configuration in this repository. Related repositories in the broader digitaldesignerjazz / Esslinger ecosystem may have their own policies or inherit this one.
