@@ -1,0 +1,60 @@
+version: 2
+updates:
+  # GitHub Actions — keep the CI/CD lattice itself current
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "nexus-ci"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Rust orchestration core
+  - package-ecosystem: "cargo"
+    directory: "/orchestration/core"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:15"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 8
+    labels:
+      - "dependencies"
+      - "rust"
+      - "orchestration"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Allow minor and patch updates freely; major updates still create PRs for review
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+        # Comment out the ignore block above when the core stabilizes and you want major bumps too
+
+  # Python reference layer (prepared)
+  # Currently no requirements.txt / pyproject.toml / Pipfile at root or in python/.
+  # Once a dependency file is added, Dependabot will automatically begin watching.
+  - package-ecosystem: "pip"
+    directory: "/python"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+      - "reference-layer"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # This entry remains dormant until a requirements*.txt, setup.py, or pyproject.toml appears in /python
