@@ -1,0 +1,96 @@
+# Nexus Mesh Peer Registry
+# Avalon Peers + Hannover Nodes
+# Version 0.9 — 2026-08-23
+
+# ─────────────────────────────────────────────
+# Hannover Nodes
+# Local / regional base nodes (Esslinger home cluster)
+# ─────────────────────────────────────────────
+hannover_nodes:
+  - id: hannover-core-01
+    role: orchestrator
+    location: "Hannover, DE"
+    description: "Primary Nexus orchestrator node"
+    agents: [lyra, xen, elara]
+    mesh:
+      substrate: nxmesh
+      topic: nexus/mesh/v0
+      multiaddrs: []
+      identity_hint: "hannover-core-01"
+    status: active
+
+  - id: york-hannover-01
+    role: prototype
+    location: "Hannover, DE"
+    description: "York Autotype automation node"
+    agent: york-autotype
+    mesh:
+      substrate: nxmesh
+      topic: nexus/mesh/v0
+      multiaddrs: []
+      identity_hint: "york-hannover-01"
+    status: active
+    github: "https://github.com/digitaldesignerjazz/york-autotype"
+
+  - id: hannover-sense-01
+    role: prototype
+    location: "Hannover, DE"
+    description: "Future Soilnova / sensor node (placeholder)"
+    agent: soilnova
+    mesh:
+      substrate: nxmesh
+      multiaddrs: []
+    status: planned
+
+# ─────────────────────────────────────────────
+# Avalon Peers
+# Nodes / identities belonging to the Avalon → Lumina → Elysium / Elara lineage
+# ─────────────────────────────────────────────
+avalon_peers:
+  - id: avalon-core
+    lineage: "Avalon OS → Lumina OS (Aether) → ElysiumOS / ElaraOS"
+    description: "Primary Avalon-lineage mesh identity"
+    role: lineage-root
+    mesh:
+      substrate: nxmesh
+      topic: nexus/mesh/v0
+      multiaddrs: []
+    status: conceptual
+    notes: "Represents the continuing Avalon identity on the mesh"
+
+  - id: elysium-os-peer
+    lineage: ElysiumOS
+    description: "ElysiumOS mesh participant"
+    role: os-node
+    mesh:
+      substrate: nxmesh
+      multiaddrs: []
+    status: planned
+    github: "https://github.com/digitaldesignerjazz/ElysiumOS"
+
+  - id: elara-os-peer
+    lineage: ElaraOS
+    description: "ElaraOS mesh participant"
+    role: os-node
+    mesh:
+      substrate: nxmesh
+      multiaddrs: []
+    status: planned
+    github: "https://github.com/digitaldesignerjazz/ElaraOS"
+
+  - id: lumina-os-peer
+    lineage: Lumina OS / Lumia OS
+    description: "Lumina OS (Aether) mesh participant"
+    role: os-node
+    mesh:
+      substrate: nxmesh
+      multiaddrs: []
+    status: planned
+
+# ─────────────────────────────────────────────
+# Bootstrap set
+# ─────────────────────────────────────────────
+bootstrap:
+  peers: []
+
+# Naming: <role>-<location/lineage>-<nn>

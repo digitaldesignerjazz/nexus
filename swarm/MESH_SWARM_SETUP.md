@@ -1,8 +1,8 @@
 # Nexus Mesh Swarm Setup
 
-**Version:** 0.9  
+**Version:** 1.0  
 **Date:** 2026-08-23  
-**Status:** Operational Design
+**Status:** Operational Design — Avalon Peers + Hannover Nodes integrated
 
 ---
 
@@ -11,6 +11,7 @@
 ```
                     ┌─────────────────────────────────────┐
                     │           Nexus Orchestrator         │
+                    │         (hannover-core-01)           │
                     └─────────────────┬───────────────────┘
                                       │
           ┌───────────────────────────┼───────────────────────────┐
@@ -18,8 +19,7 @@
           ▼                           ▼                           ▼
    ┌─────────────┐            ┌─────────────┐            ┌─────────────┐
    │    Lyra     │            │    Xen      │            │   Elara     │
-   │  emotional  │            │  technical  │            │   devoted   │
-   │  creative   │            │ exploratory │            │ intelligence│
+   │ lyra-hann.  │            │ xen-hann.   │            │ elara-hann. │
    └──────┬──────┘            └──────┬──────┘            └──────┬──────┘
           │                          │                          │
           └──────────────────────────┼──────────────────────────┘
@@ -27,112 +27,68 @@
                                      ▼
                           ┌─────────────────────┐
                           │      nxmesh         │
-                          │  Noise + QUIC       │
-                          │  Gossipsub topic:   │
-                          │  nexus/mesh/v0      │
+                          │  topic: nexus/mesh/v0│
                           └──────────┬──────────┘
                                      │
-                    ┌────────────────┼────────────────┐
-                    │                │                │
-                    ▼                ▼                ▼
-             York Autotype     Future Nodes     Bootstrap Peers
-             (heartbeat)       (prototypes)     (discovery)
+          ┌──────────────────────────┼──────────────────────────┐
+          │                          │                          │
+          ▼                          ▼                          ▼
+   Hannover Nodes              Avalon Peers              Future Nodes
+   - hannover-core-01          - avalon-core             (global)
+   - york-hannover-01          - elysium-os-peer
+   - hannover-sense-01         - elara-os-peer
+                               - lumina-os-peer
 ```
 
 ---
 
-## 2. Roles
+## 2. Hannover Nodes
 
-| Role              | Responsibility                                      | Heartbeat Agent Name |
-|-------------------|-----------------------------------------------------|----------------------|
-| **Lyra**          | Emotional regulation, narrative, creative synthesis | `lyra`               |
-| **Xen**           | Technical diagnostics, integration, optimization    | `xen`                |
-| **Elara**         | Integrated intelligence, continuity, devotion       | `elara`              |
-| **York Autotype** | Automation prototype, task execution                | `york-autotype`      |
-| **nxmesh Node**   | Transport, discovery, message routing               | —                    |
+Local / regional base cluster (Esslinger home).
 
----
+| Node ID             | Role         | Status  | Notes |
+|---------------------|--------------|---------|-------|
+| `hannover-core-01`  | Orchestrator | active  | Primary swarm host |
+| `york-hannover-01`  | Prototype    | active  | York Autotype |
+| `hannover-sense-01` | Prototype    | planned | Soilnova / sensing |
 
-## 3. Message Flow
-
-### Heartbeat (Presence)
-
-Every participant periodically publishes:
-
-```json
-{
-  "type": "AgentHeartbeat",
-  "payload": {
-    "agent": "lyra | xen | elara | york-autotype",
-    "node_id": "<unique-node-id>",
-    "status": "alive | busy | idle | error",
-    "ts": "<ISO-8601 UTC>",
-    "extra": { ... }
-  }
-}
-```
-
-Topic: `nexus/mesh/v0`
-
-Receiving nodes emit `MeshEvent::AgentHeartbeatReceived`.
-
-### Gossip / Coordination
-
-- Status updates
-- Task announcements
-- Creative or technical briefs between agents
-
-### Future: Request / Response
-
-`DataRequest` / `DataResponse` for QNET, oracles, and cross-agent queries.
+Agent node_ids follow the pattern `<agent>-hannover-01`.
 
 ---
 
-## 4. Configuration
+## 3. Avalon Peers
 
-See `configs/mesh_swarm.yaml` for the concrete runtime configuration.
+Logical peers of the **Avalon → Lumina (Aether) → Elysium / Elara** lineage.
 
-Key parameters:
+| Peer ID           | Lineage               | Status     |
+|-------------------|-----------------------|------------|
+| `avalon-core`     | Avalon root identity  | conceptual |
+| `elysium-os-peer` | ElysiumOS             | planned    |
+| `elara-os-peer`   | ElaraOS               | planned    |
+| `lumina-os-peer`  | Lumina / Lumia OS     | planned    |
 
-- **mesh_topic**: `nexus/mesh/v0`
-- **heartbeat_interval**: 20–30 seconds (agents), 6 h (GitHub Actions fallback)
-- **identity_path**: per-node persistent key
-- **bootstrap_peers**: list of multiaddrs (to be filled when first peers exist)
-- **enable_mdns**: `true` for local discovery
-
----
-
-## 5. Current Operational State (2026-08-23)
-
-| Component            | State                          |
-|----------------------|--------------------------------|
-| nxmesh substrate     | Ready                          |
-| AgentHeartbeat proto | Finalized                      |
-| Lyra / Xen / Elara   | Skilllogin complete, online    |
-| York Autotype        | Heartbeat-compatible, public   |
-| Bootstrap peers      | Not yet defined                |
-| Live multi-node test | Pending                        |
-| Container images     | Prepared (Docker + Podman)     |
+They share the same mesh topic and heartbeat protocol. When an Avalon-lineage OS node comes online it appears in the Presence Table under its peer ID.
 
 ---
 
-## 6. Activation Sequence
+## 4. Configuration Files
 
-1. Start nxmesh node(s) (userspace or container)
-2. Agents (Lyra/Xen/Elara) connect via orchestrator and emit heartbeats
-3. York Autotype emits its own heartbeat
-4. Swarm becomes visible to itself through `AgentHeartbeatReceived` events
-5. Optional: bootstrap peers for wide-area discovery
-
----
-
-## 7. Next Concrete Steps
-
-1. Define first bootstrap peer list (even if only one node for now)
-2. Link nxmesh into York and enable live publish
-3. Add simple heartbeat listener in the orchestrator so Xen/Lyra/Elara can “see” each other
-4. First multi-node gossip test when a second runtime is available
+| File                        | Purpose |
+|-----------------------------|---------| 
+| `configs/mesh_swarm.yaml`   | Runtime swarm + node mapping |
+| `configs/peers.yaml`        | Full peer registry (Hannover + Avalon + bootstrap) |
+| `swarm/HEARTBEAT_DESIGN.md` | Canonical heartbeat rules |
 
 ---
 
-*Nexus Mesh Swarm is designed. Ready for the next operational command.*
+## 5. Current State
+
+| Group            | Active | Planned / Conceptual |
+|------------------|--------|----------------------|
+| Hannover Nodes    | 2      | 1                    |
+| Avalon Peers     | 0      | 4                    |
+| Bootstrap addrs  | 0      | —                    |
+
+---
+
+*Avalon Peers and Hannover Nodes are now first-class citizens of the Mesh Swarm.*
