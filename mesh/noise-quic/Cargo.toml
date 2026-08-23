@@ -1,0 +1,51 @@
+[package]
+name = "nxmesh"
+version = "0.1.0"
+edition = "2021"
+authors = ["Sven Normen Esslinger <Esslinger & Co.>"]
+description = "Nexus Mesh Substrate — Noise + QUIC / libp2p based userspace overlay for the Nexus ecosystem. No Yggdrasil or Tor required."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/digitaldesignerjazz/nexus"
+keywords = ["mesh", "libp2p", "noise", "quic", "nexus", "p2p"]
+categories = ["network-programming", "cryptography"]
+
+[dependencies]
+# Core async runtime
+tokio = { version = "1.40", features = ["full"] }
+futures = "0.3"
+
+# libp2p stack (Noise for encryption, QUIC transport, mDNS + Kademlia discovery)
+libp2p = { version = "0.54", features = [
+    "tokio",
+    "noise",
+    "quic",
+    "tcp",
+    "dns",
+    "yamux",
+    "gossipsub",
+    "kad",
+    "mdns",
+    "identify",
+    "ping",
+    "macros",
+    "serde"
+] }
+
+# Serialization & utilities
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1.0"
+thiserror = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+rand = "0.8"
+hex = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[[example]]
+name = "basic_node"
+path = "examples/basic_node.rs"
