@@ -14,12 +14,15 @@ pub enum MeshMessage {
         ts: DateTime<Utc>,
     },
 
-    /// Agent swarm heartbeat / presence
+    /// Agent / prototype heartbeat & presence
+    /// Used by Lyra, Xen, Elara, York Autotype, and future nodes.
     AgentHeartbeat {
-        agent: String,          // "lyra" | "xen" | "elara" | custom
+        agent: String,                    // "lyra" | "xen" | "elara" | "york-autotype" | custom
         node_id: String,
-        status: String,
+        status: String,                   // "alive" | "busy" | "idle" | "error" | ...
         ts: DateTime<Utc>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        extra: Option<serde_json::Value>, // capabilities, version, load, etc.
     },
 
     /// Request / response for future QNET / rune / oracle data
@@ -61,5 +64,11 @@ pub enum MeshEvent {
     GossipReceived {
         from: String,
         text: String,
+    },
+    AgentHeartbeatReceived {
+        agent: String,
+        node_id: String,
+        status: String,
+        from: String,
     },
 }
