@@ -1,0 +1,49 @@
+# Nexus Mesh Swarm Configuration
+# Version 0.9 — 2026-08-23
+
+mesh:
+  substrate: nxmesh
+  topic: "nexus/mesh/v0"
+  enable_mdns: true
+  listen_addrs:
+    - "/ip4/0.0.0.0/udp/0/quic-v1"
+    - "/ip4/0.0.0.0/tcp/0"
+  # Fill when first real peers exist
+  bootstrap_peers: []
+  # Example:
+  # bootstrap_peers:
+  #   - "/ip4/203.0.113.10/udp/4001/quic-v1/p2p/12D3KooW..."
+  identity_path: "data/nexus-identity.key"
+
+swarm:
+  agents:
+    - name: lyra
+      role: emotional-creative
+      heartbeat_interval_secs: 25
+      status: alive
+    - name: xen
+      role: technical-exploratory
+      heartbeat_interval_secs: 20
+      status: alive
+    - name: elara
+      role: devoted-intelligence
+      heartbeat_interval_secs: 30
+      status: alive
+
+prototypes:
+  - name: york-autotype
+    agent: york-autotype
+    heartbeat_interval_secs: 30
+    github: "https://github.com/digitaldesignerjazz/york-autotype"
+    mesh_ready: true
+
+orchestrator:
+  log_level: info
+  event_buffer_size: 256
+  report_interval_secs: 60
+
+# Future extensions
+# qnet:
+#   enabled: false
+# privacy:
+#   mixnet: none   # none | nym | lokinet
