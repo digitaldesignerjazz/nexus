@@ -1,0 +1,43 @@
+# nxmesh — Nexus Mesh Substrate (Noise + QUIC / libp2p)
+# Multi-stage build for a minimal runtime image
+# Compatible with Docker and Podman
+
+# ── Build stage ──────────────────────────────────────────────
+FROM rust:1.75-bookworm AS builder
+
+WORKDIR /build
+
+# Cache dependencies
+COPY Cargo.toml ./
+RUN mkdir src && echo "fn main() {}" > src/lib.rs && \
+    cargo build --release 2>/dev/null || true
+
+# Real source
+COPY src ./src
+COPY examples ./examples
+COPY Cargo.toml ./
+
+RUN cargo build --release --example basic_node
+
+# ── Runtime stage ────────────────────────────────────────────
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /build/target/release/examples/basic_node /app/nxmesh-node
+
+# Persistent identity & data
+VOLUME ["/data"]
+
+ENV RUST_LOG=nxmesh=info,libp2p=info
+ENV NXMESH_IDENTITY=/data/node-identity.key
+
+EXPOSE 0/udp
+EXPOSE 0/tcp
+
+ENTRYPOINT ["/app/nxmesh-node"]

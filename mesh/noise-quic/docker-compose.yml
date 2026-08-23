@@ -1,0 +1,24 @@
+# nxmesh example compose
+# Usage (on a node with working Docker/Podman):
+#   docker compose up --build
+#   podman-compose up --build
+
+services:
+  nxmesh-node:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: nxmesh-node-01
+    volumes:
+      - nxmesh-data:/data
+    environment:
+      - RUST_LOG=nxmesh=info,libp2p=warn
+      - NXMESH_IDENTITY=/data/node-identity.key
+    # network_mode: host   # uncomment for easiest mDNS / QUIC discovery
+    restart: unless-stopped
+    # ports:               # only needed if not using host network
+    #   - "4001:4001/udp"
+    #   - "4001:4001/tcp"
+
+volumes:
+  nxmesh-data:
