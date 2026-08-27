@@ -1,11 +1,12 @@
 # Nexus Mesh Peer Registry
 # Avalon Peers + Hannover Nodes
-# Version 0.9 — 2026-08-23
+# Version 0.9 — 2026-08-28
+# Discovery-Prozess: docs/peer-discovery.md
 
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────
 # Hannover Nodes
 # Local / regional base nodes (Esslinger home cluster)
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────
 hannover_nodes:
   - id: hannover-core-01
     role: orchestrator
@@ -42,10 +43,10 @@ hannover_nodes:
       multiaddrs: []
     status: planned
 
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────
 # Avalon Peers
 # Nodes / identities belonging to the Avalon → Lumina → Elysium / Elara lineage
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────
 avalon_peers:
   - id: avalon-core
     lineage: "Avalon OS → Lumina OS (Aether) → ElysiumOS / ElaraOS"
@@ -87,9 +88,10 @@ avalon_peers:
       multiaddrs: []
     status: planned
 
-# ─────────────────────────────────────────────
-# Bootstrap set
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────
+# Bootstrap set — empty on purpose while Hannover waits for the first wire peer
+# Fill with Yggdrasil URIs or multiaddrs. Never commit private keys.
+# ─────────────────────────────────────────
 bootstrap:
   peers: []
 
