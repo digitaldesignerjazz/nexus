@@ -1,0 +1,17 @@
+[Unit]
+Description=Nexus Control Plane (Esslinger & Co.)
+After=network.target
+
+[Service]
+Type=simple
+User=nexus
+WorkingDirectory=/opt/nexus/server-setup
+EnvironmentFile=/opt/nexus/server-setup/.env
+ExecStart=/usr/bin/python3 /opt/nexus/server-setup/control/nexus_control.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

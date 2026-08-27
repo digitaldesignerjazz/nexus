@@ -1,0 +1,6 @@
+.env
+data/
+logs/
+*.json.tmp
+control/vendor/
+control/vendor-nexus-python/

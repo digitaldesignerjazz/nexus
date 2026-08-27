@@ -1,0 +1,31 @@
+services:
+  nexus-control:
+    image: python:3.12-slim
+    container_name: nexus-control
+    restart: unless-stopped
+    working_dir: /app
+    command: python3 /app/control/nexus_control.py
+    environment:
+      NEXUS_BIND: "0.0.0.0"
+      NEXUS_PORT: "8787"
+      NEXUS_NODE_NAME: "${NEXUS_NODE_NAME:-hannover-primary}"
+      NEXUS_ENV: "${NEXUS_ENV:-development}"
+      NEXUS_OWNER: "${NEXUS_OWNER:-Sir Sven Normen Eßlinger}"
+      NEXUS_SITE: "${NEXUS_SITE:-Hannover}"
+      NEXUS_DATA_DIR: /data
+      NEXUS_LOG_DIR: /logs
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ./control:/app/control:ro
+      - nexus-data:/data
+      - nexus-logs:/logs
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/health')"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  nexus-data:
+  nexus-logs:
