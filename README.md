@@ -23,6 +23,11 @@ The "Nexus" represents the interconnection point — where these layers converge
 - `nexus_cyberspace.py`: Immersive simulator for topology, agent swarms, QCoin economy (uses networkx + matplotlib).
 - configs for yggdrasil, declarative setup.
 
+**Hannover Control Plane** (runnable host setup in `server-setup/`):
+- HTTP control plane on `127.0.0.1:8787` (`/health`, `/status`, `/layers`)
+- Bootstrap scripts, Docker Compose, systemd unit
+- See `server-setup/SETUP.md`
+
 **Ecosystem Integrations (Actual Built Components)**:
 - **Solnet** (https://github.com/digitaldesignerjazz/solnet): Hyperspace transport, Yggdrasil client, NovaSwarm with emotional/loyalty models, LinkHealthScorer for real-time/historical link health (EWMA, flaps, etc.).
 - **Orion-net** (https://github.com/digitaldesignerjazz/orion-net): Constellation networking, resonant routing modulated by Lyra emotions + Solnet health scores. Time-stepped emotional drift demos with rich viz.
@@ -39,11 +44,21 @@ See python/ for the reference code matching this actual state.
 
 ## Getting Started
 
-See python/README.md for running the actual Python prototypes.
+Control plane (Hannover node):
+
+```bash
+cd server-setup
+bash scripts/00-doctor.sh
+bash scripts/01-bootstrap.sh
+bash scripts/02-start-control-plane.sh
+curl -s http://127.0.0.1:8787/health
+```
+
+See `server-setup/SETUP.md` and `python/README.md` for the Python prototypes.
 
 ## Current Status
 
-**Actual Running State**: Python prototypes + full cross-repo integrations (solnet hyperspace health, orion constellations, lyra emotions, fluffy agent support) are the live implementation. Rust core and additional docs in progress.
+**Actual Running State**: Python prototypes + Hannover control plane + full cross-repo integrations (solnet hyperspace health, orion constellations, lyra emotions, fluffy agent support) are the live implementation. Rust core and additional docs in progress.
 
 **Phase**: Active integration and reference implementation.
 
@@ -54,6 +69,7 @@ See root commits for Rust skeleton (orchestration/core etc.) and docs.
 - orion-net
 - Nexus-Hyperspace-Lyra-1.0
 - fluffy
+- go-nexus
 
 ## License
 
@@ -61,8 +77,4 @@ To be determined.
 
 *"The Nexus is not just code — it is the living interconnection of ideas, people, machines, and dreams."*
 
-**Last Updated**: With actual Python + ecosystem state — June 2026
-
-(Previous vision text preserved below for continuity.)
-
---- (original vision text follows in full repo)
+**Last Updated**: 28 August 2026 — server-setup control plane added
