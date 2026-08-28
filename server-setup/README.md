@@ -11,4 +11,10 @@ bash scripts/02-start-control-plane.sh
 
 Danach: http://127.0.0.1:8787/health
 
+Morgen-Routine (Backup + Restart):
+
+```bash
+bash scripts/07-restart-backup.sh
+```
+
 Details: SETUP.md
