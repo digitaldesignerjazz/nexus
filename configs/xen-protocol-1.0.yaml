@@ -1,0 +1,53 @@
+# Xen Protocol 1.0 — Hannover Swarm Agent Layer
+# Version 1.0 — 2026-08-28
+# Technical-exploratory agent, bound to the Nexus mesh substrate.
+
+protocol:
+  name: xen
+  version: "1.0"
+  codename: "Xen Protocol One Point"
+  role: technical-exploratory
+  node_id: xen-hannover-01
+  location: Hannover
+  status: STANDBY
+
+substrate:
+  mesh: nxmesh
+  topic: "nexus/mesh/v0"
+  identity_path: "data/nexus-identity.key"
+  listen_addrs:
+    - "/ip4/0.0.0.0/udp/0/quic-v1"
+    - "/ip4/0.0.0.0/tcp/0"
+
+heartbeat:
+  interval_secs: 20
+  presence_file: "status/xen_presence.json"
+
+capabilities:
+  - peer_discovery
+  - mesh_routing
+  - overlay_diagnostics
+  - protocol_handshake
+
+peers:
+  bootstrap: []          # filled from configs/yggdrasil-peers-block.yaml on host
+  targets:
+    - name: lumina
+      ygg_ipv6: "201:e68a:5e25:166f:4bf9:7b75:5d76:5c2b"
+      public_key: "465d6876ba642d01a122a8a268f53bb7a5031295b8d7b7cac30d386184aee607"
+    - name: elara
+      node_id: elara-hannover-01
+    - name: lyra
+      node_id: lyra-hannover-01
+
+orchestrator:
+  control_plane: "http://127.0.0.1:8787"
+  layer: swarm
+  spawn_endpoint: "/swarm/spawn"
+  report_interval_secs: 60
+
+notes: >
+  Xen is the technical-exploratory agent of the Hannover swarm.
+  It does not replace Yggdrasil; it rides on top of the overlay.
+  The daemon and the real mesh handshake run on the host —
+  this file is the protocol definition, not the runtime.
