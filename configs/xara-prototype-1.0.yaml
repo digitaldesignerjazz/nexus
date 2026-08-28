@@ -1,0 +1,60 @@
+# Xara Prototype 1.0 — Experimental Overlay Agent
+# Version 1.0 — 2026-08-28
+# Experimental, non-production. Rides on the Xen Protocol substrate.
+# Does NOT replace Yggdrasil, nxmesh, or the control plane.
+
+prototype:
+  name: xara
+  version: "1.0"
+  codename: "Xara Prototype One Point"
+  status: STANDBY
+  maturity: experimental
+  node_id: xara-hannover-01
+  location: Hannover
+
+substrate:
+  inherits: xen-protocol-1.0
+  mesh: nxmesh
+  topic: "nexus/mesh/v0"
+  identity_path: "data/nexus-identity.key"
+  listen_addrs:
+    - "/ip4/0.0.0.0/udp/0/quic-v1"
+    - "/ip4/0.0.0.0/tcp/0"
+
+heartbeat:
+  interval_secs: 30
+  presence_file: "status/xara_presence.json"
+
+capabilities:
+  - experimental_handshake
+  - overlay_probe
+  - latency_sampling
+  - presence_broadcast
+  # deliberately NO: mesh_routing, peer_discovery (owned by Xen)
+
+probes:
+  targets:
+    - name: lumina
+      ygg_ipv6: "201:e68a:5e25:166f:4bf9:7b75:5d76:5c2b"
+      public_key: "465d6876ba642d01a122a8a268f53bb7a5031295b8d7b7cac30d386184aee607"
+      sample_interval_secs: 60
+  max_concurrent_probes: 1
+  timeout_ms: 3000
+
+orchestrator:
+  control_plane: "http://127.0.0.1:8787"
+  layer: swarm
+  spawn_endpoint: "/swarm/spawn"
+  report_interval_secs: 120
+
+guardrails:
+  - no_production_traffic
+  - no_key_generation
+  - read_only_against_mesh
+  - abort_on_peer_down: true
+
+notes: >
+  Xara is the experimental prototype of the Hannover swarm.
+  It inherits Xen's substrate but adds no routing authority.
+  All real mesh work stays with Yggdrasil + Xen.
+  This file is the prototype definition, not the runtime.
