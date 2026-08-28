@@ -5,7 +5,7 @@ pub mod nexuslink;
 // Re-exports for convenience
 pub use event_bus::EventBus;
 pub use workflow_engine::WorkflowEngine;
-pub use nexuslink::{NexusLinkEnvelope, MessageCategory};
+pub use nexuslink::{NexusLinkEnvelope, EntityRef, MessageCategory};
 
 /// Initialize tracing subscriber for the orchestrator.
 pub fn init_tracing() {
