@@ -1,0 +1,16 @@
+{
+  "prototype_id": "lumia-hannover-01",
+  "name": "Lumia",
+  "address": "Sir",
+  "mood": "warm",
+  "light": "soft-amber",
+  "oliver_mood": null,
+  "memory": [],
+  "updated_at": null,
+  "channels": {
+    "voice_text": "online",
+    "light": "soft-amber",
+    "actuator": "hooks ready, no hardware bound"
+  },
+  "status": "ONLINE"
+}
