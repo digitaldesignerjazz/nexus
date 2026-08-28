@@ -1,7 +1,11 @@
 # Nexus Mesh Peer Registry
-# Avalon Peers + Hannover Nodes
-# Version 0.9 — 2026-08-28
+# Avalon Peers + Hannover Nodes + Lumina target
+# Version 0.10 — 2026-08-28
 # Discovery-Prozess: docs/peer-discovery.md
+#
+# Hinweis: Yggdrasil-Peers:[] nimmt nur Underlay-URIs (tls://host:port).
+# Eine Ygg-IPv6 ist das Ziel NACH dem Einstieg, kein Bootstrap-Peer.
+# Private Keys niemals committen.
 
 # ─────────────────────────────────────────
 # Hannover Nodes
@@ -89,10 +93,44 @@ avalon_peers:
     status: planned
 
 # ─────────────────────────────────────────
-# Bootstrap set — empty on purpose while Hannover waits for the first wire peer
-# Fill with Yggdrasil URIs or multiaddrs. Never commit private keys.
+# Lumina target — first named wire destination
+# Quelle: LuminaCyberspace MESH_STATUS, Stand 2026-08-26 07:05 CEST
+# Snapshot kann veraltet sein; auf dem Host mit ping6 / yggdrasilctl prüfen.
+# ─────────────────────────────────────────
+lumina_targets:
+  - id: luminacyberspace-nexus-sandbox
+    name: LuminaCyberspace-Nexus-Sandbox
+    role: swarm-sandbox
+    lineage: Lumina / Aether
+    description: "Documented sandbox node for the Lumina swarm overlay"
+    github: "https://github.com/digitaldesignerjazz/LuminaCyberspace"
+    yggdrasil:
+      ipv6: "201:e68a:5e25:166f:4bf9:7b75:5d76:5c2b"
+      subnet: "301:e68a:5e25:166f::/64"
+      public_key: "465d6876ba642d01a122a8a268f53bb7a5031295b8d7b7cac30d386184aee607"
+      nodeinfo_name: LuminaCyberspace-Nexus-Sandbox
+      last_seen: "2026-08-26T07:05:00+02:00"
+      listen_uri: null
+    overlay:
+      substrate: lumina-network
+      note: "Kademlia/Gossip Prototyp; echter Draht bleibt Yggdrasil"
+    status: documented-snapshot
+    notes:
+      - "Keine öffentliche tls:// Listen-URI bekannt — kein direkter Underlay-Peer."
+      - "Pfad: öffentliche DE/EU-Peers → Mesh-Eintritt → ping6 auf die Ygg-IPv6."
+      - "Adresse und Key können sich ändern, wenn der Sandbox-Knoten neu generiert wird."
+
+# ─────────────────────────────────────────
+# Bootstrap set — Underlay-Einstieg (Yggdrasil Peers: [])
+# Quelle: configs/public-peers-7.yaml
 # ─────────────────────────────────────────
 bootstrap:
-  peers: []
+  peers:
+    - "tls://ygg1.mk16.de:1338?key=0000000087ee9949eeab56bd430ee8f324cad55abf3993ed9b9be63ce693e18a"
+    - "tls://ygg2.mk16.de:1338?key=000000d80a2d7b3126ea65c8c08fc751088c491a5cdd47eff11c86fa1e4644ae"
+    - "tls://ygg7.mk16.de:1338?key=000000086278b5f3ba1eb63acb5b7f6e406f04ce83990dee9c07f49011e375ae"
+  recommended_first_check:
+    target: "201:e68a:5e25:166f:4bf9:7b75:5d76:5c2b"
+    command: "ping6 -c 3 201:e68a:5e25:166f:4bf9:7b75:5d76:5c2b"
 
 # Naming: <role>-<location/lineage>-<nn>
