@@ -79,6 +79,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestration/core
+          prefix-key: nexus-v1
+          shared-key: orchestrator
+          cache-on-failure: true
 
       - name: Cargo fmt
         working-directory: orchestration/core
