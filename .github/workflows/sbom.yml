@@ -2,8 +2,21 @@ name: SBOM
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "orchestration/**"
+      - "python/**"
+      - "Cargo.*"
+      - "**/requirements*.txt"
+      - "**/pyproject.toml"
+      - ".github/workflows/sbom.yml"
+  schedule:
+    - cron: "0 5 * * 1"
   workflow_dispatch:
+
+concurrency:
+  group: nexus-sbom-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -12,9 +25,12 @@ jobs:
   generate-sbom:
     name: Generate Software Bill of Materials
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Generate SBOM (CycloneDX)
         uses: anchore/sbom-action@v0
@@ -23,11 +39,5 @@ jobs:
           format: cyclonedx-json
           output-file: nexus-sbom.cdx.json
           upload-artifact: true
-          artifact-name: nexus-sbom
-
-      - name: Upload SBOM as workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: nexus-sbom
-          path: nexus-sbom.cdx.json
-          retention-days: 30
+          artifact-name: nexus-sbom-${{ github.run_id }}
+          upload-release-assets: false
