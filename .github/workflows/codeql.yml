@@ -1,14 +1,25 @@
-name: "CodeQL"
+name: CodeQL
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "python/**"
+      - "orchestration/**"
+      - ".github/workflows/codeql.yml"
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "python/**"
+      - "orchestration/**"
+      - ".github/workflows/codeql.yml"
   schedule:
-    # Weekly security scan — Sunday 04:00 UTC (~06:00 Europe/Berlin)
     - cron: "0 4 * * 0"
   workflow_dispatch:
+
+concurrency:
+  group: nexus-codeql-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
@@ -19,21 +30,20 @@ jobs:
       security-events: write
       actions: read
       contents: read
-
     strategy:
       fail-fast: false
       matrix:
-        language: [ "python", "rust" ]
-
+        language: ["python", "rust"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          # queries: security-extended,security-and-quality  # can be enabled later for broader coverage
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
