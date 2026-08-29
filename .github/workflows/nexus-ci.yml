@@ -2,74 +2,73 @@ name: Nexus CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "python/**"
+      - "orchestration/**"
+      - ".github/workflows/nexus-ci.yml"
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "python/**"
+      - "orchestration/**"
+      - ".github/workflows/nexus-ci.yml"
   workflow_dispatch:
 
 concurrency:
-  group: nexus-ci-${{ github.ref }}
+  group: nexus-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   python:
     name: Python Reference Layer
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12"]
-
+    timeout-minutes: 10
     steps:
-      - name: Checkout Nexus
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v5
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          persist-credentials: false
 
-      - name: Install optional simulation dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install networkx matplotlib numpy
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
-      - name: Syntax & compile check (core prototypes)
+      - name: Compile existing sources
         run: |
-          python -m py_compile python/start_nexus.py
-          python -m py_compile python/nexus_core.py
-          python -m py_compile python/nexus_orchestrator.py
-          python -m py_compile python/nexus_cyberspace.py
-          echo "✓ All core Python modules compile cleanly"
-
-      - name: Import surface validation
-        run: |
-          python -c "
+          set -euo pipefail
+          mapfile -t files < <(find python -name '*.py' -type f 2>/dev/null || true)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "Keine Python-Quellen unter python/ — Layer übersprungen."
+            exit 0
+          fi
+          python -m py_compile "${files[@]}"
+          python - <<'PY'
           import ast
-          import sys
           from pathlib import Path
-
-          files = [
-              'python/start_nexus.py',
-              'python/nexus_core.py',
-              'python/nexus_orchestrator.py',
-              'python/nexus_cyberspace.py',
-          ]
-          for f in files:
-              source = Path(f).read_text(encoding='utf-8')
-              ast.parse(source)
-              print(f'✓ AST ok: {f}')
-          print('Python reference layer integrity confirmed')
-          "
+          for path in Path("python").rglob("*.py"):
+              ast.parse(path.read_text(encoding="utf-8"))
+              print(f"AST ok: {path}")
+          print("Python reference layer integrity confirmed")
+          PY
 
   rust:
     name: Rust Orchestration Core
     runs-on: ubuntu-latest
-
+    timeout-minutes: 20
     steps:
-      - name: Checkout Nexus
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -81,27 +80,30 @@ jobs:
         with:
           workspaces: orchestration/core
 
-      - name: Cargo check
+      - name: Cargo fmt
         working-directory: orchestration/core
-        run: cargo check --all-targets
+        run: cargo fmt --all -- --check
 
-      - name: Cargo test
+      - name: Cargo check library
         working-directory: orchestration/core
-        run: cargo test --all-targets
+        run: cargo check --lib --all-targets
 
-      - name: Clippy (warnings as errors for the skeleton)
+      - name: Cargo test library
         working-directory: orchestration/core
-        run: cargo clippy --all-targets -- -D warnings || true
-        # Note: currently soft (|| true) while the core is still skeleton.
-        # Tighten to -D warnings once the implementation stabilizes.
+        run: cargo test --lib --all-targets
 
-      - name: Format check
+      - name: Cargo check binary
         working-directory: orchestration/core
-        run: cargo fmt --all -- --check || true
+        run: cargo check --bins --all-targets
+
+      - name: Clippy library
+        working-directory: orchestration/core
+        run: cargo clippy --lib --all-targets -- -D warnings
 
   summary:
     name: Nexus Resonance Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [python, rust]
     if: always()
     steps:
@@ -111,8 +113,8 @@ jobs:
           echo "Python layer: ${{ needs.python.result }}"
           echo "Rust core:    ${{ needs.rust.result }}"
           if [ "${{ needs.python.result }}" = "success" ] && [ "${{ needs.rust.result }}" = "success" ]; then
-            echo "✓ The lattice holds. Resonance confirmed."
+            echo "The lattice holds. Resonance confirmed."
           else
-            echo "⚠ One or more layers need attention."
+            echo "One or more layers need attention."
             exit 1
           fi
