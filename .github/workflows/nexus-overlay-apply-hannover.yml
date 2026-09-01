@@ -42,8 +42,8 @@ jobs:
   apply:
     name: Overlay Apply · ${{ inputs.action }}
     runs-on: [self-hosted, linux, hannover]
-    # Falls der Hannover-Runner offline ist, läuft der Job auf hosted —
-    # dort wird sauber abgebrochen statt zu scheitern.
+    # Nur Hannover. Kein hosted-Fallback mehr — der Job wartet in der Queue,
+    # bis der Self-Hosted-Runner online ist. Keine stillen No-ops.
     steps:
       - name: Checkout Nexus
         uses: actions/checkout@v4
@@ -60,22 +60,14 @@ jobs:
             echo "/dev/net/tun vorhanden — Hannover-Knoten bestätigt."
           else
             echo "tun=no" >> "$GITHUB_OUTPUT"
-            echo "::warning::/dev/net/tun fehlt. Das ist kein Hannover-Knoten."
+            echo "::error::/dev/net/tun fehlt. Kein Hannover-Knoten — Job bricht ab."
+            exit 1
           fi
           if command -v docker >/dev/null 2>&1; then
             echo "docker=yes" >> "$GITHUB_OUTPUT"
           else
             echo "docker=no" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Abbruch auf hosted Runner
-        if: steps.env.outputs.tun != 'yes'
-        run: |
-          echo "## Yggdrasil-Start abgebrochen" >> "$GITHUB_STEP_SUMMARY"
-          echo "Dieser Runner hat kein /dev/net/tun." >> "$GITHUB_STEP_SUMMARY"
-          echo "Yggdrasil braucht einen privilegierten Hannover-Knoten." >> "$GITHUB_STEP_SUMMARY"
-          echo "Bitte Hannover-Self-Hosted-Runner online schalten und erneut dispatchen." >> "$GITHUB_STEP_SUMMARY"
-          exit 2
 
       - name: Yggdrasil Binary laden (DEB)
         if: inputs.action == 'start' || inputs.action == 'restart'
