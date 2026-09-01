@@ -1,0 +1,100 @@
+name: Nexus Overlay Schedule
+
+# Täglicher Overlay-Check auf dem Hannover-Knoten.
+# Läuft nur auf dem Self-Hosted-Runner (Labels: self-hosted, linux, hannover).
+# Kein hosted-Fallback — fehlt der Runner, bleibt der Job sauber in der Queue.
+
+on:
+  schedule:
+    # Täglich 03:17 UTC (~05:17 Europe/Berlin)
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Overlay-Aktion"
+        required: true
+        default: "status"
+        type: choice
+        options:
+          - status
+          - start
+          - restart
+          - backup
+          - health
+
+concurrency:
+  group: nexus-overlay-schedule
+  cancel-in-progress: false
+
+jobs:
+  overlay:
+    name: Overlay · ${{ github.event.inputs.action || 'status' }}
+    runs-on: [self-hosted, linux, hannover]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Nexus
+        uses: actions/checkout@v4
+
+      - name: Resolve action
+        id: act
+        run: |
+          ACTION="${{ github.event.inputs.action }}"
+          if [ -z "$ACTION" ]; then ACTION="status"; fi
+          echo "action=$ACTION" >> "$GITHUB_OUTPUT"
+          echo "Resolved action: $ACTION"
+
+      - name: Ensure Yggdrasil present
+        run: |
+          if ! command -v yggdrasil >/dev/null 2>&1; then
+            echo "Yggdrasil-Binary fehlt — lade 0.5.14 DEB"
+            curl -fsSL https://github.com/yggdrasil-network/yggdrasil-go/releases/download/v0.5.14/yggdrasil-0.5.14-amd64.deb -o /tmp/ygg.deb
+            echo "a3f1c2d4e5b6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3 /tmp/ygg.deb" | sha256sum -c -
+            sudo dpkg -i /tmp/ygg.deb
+          fi
+          yggdrasil -version
+
+      - name: Ensure config
+        run: |
+          CONF="/etc/yggdrasil.conf"
+          if [ ! -f "$CONF" ]; then
+            echo "Keine Config — generiere Vorlage"
+            sudo yggdrasil -genconf | sudo tee "$CONF" >/dev/null
+            sudo chmod 600 "$CONF"
+          fi
+          echo "Config: $CONF"
+
+      - name: Overlay action
+        run: |
+          set -e
+          ACTION="${{ steps.act.outputs.action }}"
+          case "$ACTION" in
+            start)
+              sudo systemctl enable --now yggdrasil
+              ;;
+            restart)
+              sudo systemctl restart yggdrasil
+              ;;
+            backup)
+              TS=$(date +%Y%m%d-%H%M%S)
+              sudo cp /etc/yggdrasil.conf "/etc/yggdrasil.conf.bak.$TS"
+              echo "Backup: /etc/yggdrasil.conf.bak.$TS"
+              ;;
+            health)
+              sudo systemctl is-active yggdrasil
+              yggdrasil -useconffile /etc/yggdrasil.conf -address || true
+              ;;
+            status|*)
+              systemctl is-active yggdrasil || echo "inactive"
+              yggdrasil -useconffile /etc/yggdrasil.conf -address 2>/dev/null || echo "no address"
+              ;;
+          esac
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Nexus Overlay Schedule" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Aktion: ${{ steps.act.outputs.action }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Runner: ${{ runner.name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Ref: ${{ github.ref }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- SHA: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
