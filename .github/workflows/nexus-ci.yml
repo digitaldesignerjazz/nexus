@@ -13,55 +13,11 @@ concurrency:
 
 jobs:
   python:
-    name: Python Reference Layer
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12"]
-
-    steps:
-      - name: Checkout Nexus
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-
-      - name: Install optional simulation dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install networkx matplotlib numpy
-
-      - name: Syntax & compile check (core prototypes)
-        run: |
-          python -m py_compile python/start_nexus.py
-          python -m py_compile python/nexus_core.py
-          python -m py_compile python/nexus_orchestrator.py
-          python -m py_compile python/nexus_cyberspace.py
-          echo "✓ All core Python modules compile cleanly"
-
-      - name: Import surface validation
-        run: |
-          python -c "
-          import ast
-          import sys
-          from pathlib import Path
-
-          files = [
-              'python/start_nexus.py',
-              'python/nexus_core.py',
-              'python/nexus_orchestrator.py',
-              'python/nexus_cyberspace.py',
-          ]
-          for f in files:
-              source = Path(f).read_text(encoding='utf-8')
-              ast.parse(source)
-              print(f'✓ AST ok: {f}')
-          print('Python reference layer integrity confirmed')
-          "
+    uses: digitaldesignerjazz/nexus-cicd/.github/workflows/reusable-python.yml@main
+    with:
+      python-version: "3.12"
+      source-path: "src"
+      runner: "self-hosted"
 
   rust:
     name: Rust Orchestration Core
