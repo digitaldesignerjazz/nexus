@@ -34,7 +34,7 @@ jobs:
           ls -la nexus-sbom.cdx.json
 
       - name: Upload SBOM as workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nexus-sbom
           path: nexus-sbom.cdx.json
