@@ -2,7 +2,7 @@ use tokio::sync::broadcast;
 use tracing::{info, warn};
 use std::collections::HashMap;
 
-use crate::nexuslink::{NexusLinkEnvelope, MessageCategory};
+use crate::nexuslink::NexusLinkEnvelope;
 
 /// Simple in-memory async EventBus for Phase 1.
 /// Topics are strings; later can be hierarchical or NexusLink-aware.
