@@ -1,0 +1,5 @@
+# Nexus Python reference layer — optional simulation dependencies.
+# Used by .github/workflows/nexus-ci.yml (pip cache key) and local dev.
+networkx
+matplotlib
+numpy
