@@ -1,5 +1,5 @@
 use tracing::info;
-use crate::nexuslink::{NexusLinkEnvelope, MessageCategory};
+use crate::nexuslink::NexusLinkEnvelope;
 use crate::event_bus::EventBus;
 
 /// Very basic workflow engine stub for Phase 1.
