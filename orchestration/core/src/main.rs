@@ -1,4 +1,6 @@
+use clap::Parser;
 use nexus_orchestrator::{init_tracing, EventBus, WorkflowEngine, NexusLinkEnvelope, EntityRef};
+use tracing::info;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "Nexus Central Orchestration Hub — Phase 1 Core")]
