@@ -1,0 +1,21 @@
+[project]
+name = "nexus"
+version = "0.1.0"
+description = "Nexus — central integration hub for xMesh/NovaNet/QNET, AI agent swarms and Esslinger & Co. prototypes."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "networkx",
+    "matplotlib",
+    "numpy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["python"]
