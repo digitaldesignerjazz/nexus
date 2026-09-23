@@ -31,10 +31,7 @@ require_cmd python3
 [[ -f "$ROOT/control/nexus_control.py" ]] || die "control/nexus_control.py fehlt." 3
 
 if [[ -f .env ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source .env
-  set +a
+  load_dotenv "$ROOT/.env"
 else
   nexus_warn ".env fehlt — Defaults. Erst bash scripts/01-bootstrap.sh ausführen."
 fi

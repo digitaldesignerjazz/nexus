@@ -39,3 +39,25 @@ assert_setup_root() {
   [[ -f "$root/control/nexus_control.py" ]] || die "control/nexus_control.py fehlt unter $root" 3
   [[ -f "$root/.env.example" ]] || die ".env.example fehlt unter $root" 3
 }
+
+# KEY=value loader that does not execute values with spaces
+# (NEXUS_OWNER=Sir Sven … must never become a shell command).
+load_dotenv() {
+  local file="$1" line key val
+  [[ -n "$file" && -f "$file" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ "$line" == *"="* ]] || continue
+    key="${line%%=*}"
+    val="${line#*=}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    if [[ "$val" =~ ^\".*\"$ || "$val" =~ ^\'.*\'$ ]]; then
+      val="${val:1:${#val}-2}"
+    fi
+    printf -v "$key" '%s' "$val"
+    export "$key"
+  done < "$file"
+}
