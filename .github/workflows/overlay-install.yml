@@ -1,0 +1,120 @@
+name: Nexus Overlay Install (Cloud Dev Environment)
+
+# Sir ordered: run the overlay install guide (ent_7aba72a1830642c7) in a
+# development environment accessible to this agent. GitHub-hosted ubuntu-latest
+# runners are the closest disposable cloud VM available. This is NOT the
+# Hannover operator host and does NOT activate the live mesh.
+#
+# Per ACTIVATION_PROTOCOL.md: Step 1 (privileged Hannover host) is false here.
+# This workflow covers Step 2 (install overlay) only, as a dry-run in cloud.
+# No auth keys, no live keys, no mesh join, no Hannover host touched.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/overlay-install.yml"
+
+concurrency:
+  group: nexus-overlay-install
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  overlay-install:
+    name: Install Tailscale, Yggdrasil, NetBird, Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Host identity (Step 1 check)
+        run: |
+          set -euo pipefail
+          echo "hostname: $(hostname)"
+          echo "kernel:   $(uname -a)"
+          echo "os:       $(. /etc/os-release && echo $PRETTY_NAME)"
+          id
+          # Honest record: this is a GitHub-hosted sandbox VM, not the
+          # privileged Hannover operator host. ACTIVATION_PROTOCOL Step 1
+          # would STOP here. This job proceeds only as a Step-2 dry-run.
+          if grep -qiE 'sandbox|hds-' /etc/hostname 2>/dev/null; then
+            echo "SANDBOX MARKER DETECTED"
+          fi
+          echo "NOTE: not the Hannover operator host — install is a cloud dry-run only."
+
+      - name: Install Tailscale
+        run: |
+          set -euo pipefail
+          curl -fsSL https://tailscale.com/install.sh | sh
+          tailscale version
+
+      - name: Install Yggdrasil (official apt repo)
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y dirmngr
+          sudo mkdir -p /usr/local/apt-keys
+          gpg --fetch-keys https://neilalexander.s3.dualstack.eu-west-2.amazonaws.com/deb/key.txt
+          gpg --export 1C5162E133015D81A811239D1840CDAC6011C5EA | sudo tee /usr/local/apt-keys/yggdrasil-keyring.gpg > /dev/null
+          echo 'deb [signed-by=/usr/local/apt-keys/yggdrasil-keyring.gpg] https://neilalexander.s3.dualstack.eu-west-2.amazonaws.com/deb/ debian yggdrasil' | sudo tee /etc/apt/sources.list.d/yggdrasil.list
+          sudo apt-get update
+          sudo apt-get install -y yggdrasil
+          yggdrasil -version
+
+      - name: Install NetBird
+        run: |
+          set -euo pipefail
+          curl -fsSL https://pkgs.netbird.io/install.sh | sh
+          netbird version
+
+      - name: Install Docker Engine
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          sudo systemctl enable --now docker
+          docker version
+
+      - name: Record versions
+        run: |
+          set -euo pipefail
+          {
+            echo "overlay_install_report"
+            echo "timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "host: $(hostname)"
+            echo "os: $(. /etc/os-release && echo $PRETTY_NAME)"
+            echo "---"
+            echo -n "tailscale: "; tailscale version 2>/dev/null | head -1 || echo MISSING
+            echo -n "yggdrasil: "; yggdrasil -version 2>/dev/null | head -1 || echo MISSING
+            echo -n "netbird:   "; netbird version 2>/dev/null | head -1 || echo MISSING
+            echo -n "docker:    "; docker version --format '{{.Server.Version}}' 2>/dev/null || echo MISSING
+            echo "---"
+            echo "mesh_join: NOT_PERFORMED (no auth keys)"
+            echo "hannover_host: NOT_TOUCHED"
+            echo "activation_protocol_step: 2_dry_run_cloud_only"
+          } | tee overlay-install-report.txt
+
+      - name: Upload install report
+        uses: actions/upload-artifact@v4
+        with:
+          name: overlay-install-report
+          path: overlay-install-report.txt
+          if-no-files-found: error
+          retention-days: 14
