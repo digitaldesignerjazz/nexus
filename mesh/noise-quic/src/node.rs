@@ -5,7 +5,7 @@ use crate::protocol::{MeshEvent, MeshMessage};
 use anyhow::Result;
 use futures::StreamExt;
 use libp2p::{
-    gossipsub, identify, kad, mdns, noise, ping, quic, swarm::NetworkBehaviour,
+    gossipsub, identify, kad, mdns, noise, ping, swarm::NetworkBehaviour,
     swarm::SwarmEvent, tcp, yamux, Multiaddr, PeerId, Swarm, SwarmBuilder,
 };
 use std::collections::hash_map::DefaultHasher;
@@ -89,7 +89,8 @@ impl NxMeshNode {
         let mut gossipsub = gossipsub::Behaviour::new(
             gossipsub::MessageAuthenticity::Signed(identity.keypair().clone()),
             gossipsub_config,
-        )?;
+        )
+        .map_err(|e| anyhow::anyhow!("gossipsub behaviour: {e}"))?;
 
         let topic = gossipsub::IdentTopic::new(config.mesh_topic.clone());
         gossipsub.subscribe(&topic)?;

@@ -22,11 +22,11 @@ async fn main() -> Result<()> {
         ..Default::default()
     };
 
-    let (mut node, mut events) = NxMeshNode::start(config).await?;
+    let (node, mut events) = NxMeshNode::start(config).await?;
     println!("nxmesh node online — {}", node.short_id());
 
     // Spawn the event loop
-    let node_handle = tokio::spawn(async move {
+    let _node_handle = tokio::spawn(async move {
         node.run().await;
     });
 
