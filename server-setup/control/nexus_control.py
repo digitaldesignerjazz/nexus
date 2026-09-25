@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import os
 import threading
 import time
@@ -109,6 +110,91 @@ def snapshot() -> dict[str, Any]:
     }
 
 
+
+def cyberspace_pkg_root() -> Path | None:
+    """Locate server-setup/lumina next to this control plane, if present."""
+    env = os.environ.get("LUMINA_SETUP_ROOT", "").strip()
+    if env:
+        p = Path(env).expanduser().resolve()
+        if (p / "scripts" / "03-start-cyberspace.sh").is_file():
+            return p
+    candidate = HERE / "lumina"
+    if (candidate / "scripts" / "03-start-cyberspace.sh").is_file():
+        return candidate.resolve()
+    return None
+
+
+def cyberspace_status_payload() -> dict[str, Any]:
+    root = cyberspace_pkg_root()
+    if root is None:
+        return {"available": False, "reason": "lumina_package_missing"}
+    status_dir = root / "runtime" / "status"
+    files: dict[str, str] = {}
+    if status_dir.is_dir():
+        for p in sorted(status_dir.glob("*.status")):
+            try:
+                files[p.name] = p.read_text(encoding="utf-8")[:2000]
+            except OSError:
+                files[p.name] = "<unreadable>"
+    orch_alive = False
+    try:
+        orch_alive = (
+            subprocess.run(
+                ["pgrep", "-f", "nexus_orchestrator.py"],
+                check=False,
+                capture_output=True,
+            ).returncode
+            == 0
+        )
+    except OSError:
+        orch_alive = False
+    return {
+        "available": True,
+        "package": str(root),
+        "version": (root / "VERSION").read_text(encoding="utf-8").strip()
+        if (root / "VERSION").is_file()
+        else None,
+        "orchestrator_alive": orch_alive,
+        "status_files": files,
+        "note": "Control plane does not own the process tree; scripts under lumina/ do.",
+    }
+
+
+def cyberspace_start() -> dict[str, Any]:
+    """Thin hook: spawn scripts/03-start-cyberspace.sh in background if present."""
+    root = cyberspace_pkg_root()
+    if root is None:
+        return {"ok": False, "error": "lumina_package_missing", "hint": "Install server-setup/lumina"}
+    script = root / "scripts" / "03-start-cyberspace.sh"
+    log_dir = root / "runtime" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "control-plane-start.log"
+    try:
+        with log_file.open("a", encoding="utf-8") as fh:
+            fh.write(f"\n--- control-plane trigger {utc_now()} ---\n")
+            proc = subprocess.Popen(  # noqa: S603
+                ["bash", str(script)],
+                cwd=str(root),
+                stdout=fh,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+        emit("CYBERSPACE_START", {"pid": proc.pid, "script": str(script)})
+        STATE["layers"].setdefault("prototypes", {})
+        STATE["layers"]["prototypes"].update(
+            {"status": "STARTING", "cyberspace_pid": proc.pid}
+        )
+        return {
+            "ok": True,
+            "pid": proc.pid,
+            "script": str(script),
+            "log": str(log_file),
+            "note": "Spawned start script; poll GET /cyberspace/status",
+        }
+    except OSError as exc:
+        return {"ok": False, "error": str(exc)}
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "NexusControl/0.1"
 
@@ -149,6 +235,9 @@ class Handler(BaseHTTPRequestHandler):
                 STATE["layers"]["swarm"].update({"status": "OPERATIONAL", "agents": SWARM_SIZE})
                 emit("SWARM_EXPAND", {"agents": SWARM_SIZE})
                 self._json(200, STATE["layers"]["swarm"])
+            elif path == "/cyberspace/start":
+                result = cyberspace_start()
+                self._json(200 if result.get("ok") else 503, result)
             elif path == "/stop":
                 STATE["status"] = "STOPPING"
                 emit("NEXUS_STOP", {})
