@@ -30,3 +30,17 @@ bash scripts/07-restart-backup.sh
 ```
 
 Details: SETUP.md
+
+
+## LuminaCyberspace-Paket
+
+Ab `0.3.0-alpha.2`: `lumina/` — Snapshot holen und Cyberspace-Kern starten:
+
+```bash
+cd ~/nexus-hub/server-setup/lumina
+bash scripts/00-doctor-lumina.sh
+bash scripts/03-start-cyberspace.sh
+bash scripts/04-status.sh
+```
+
+Details und Ehrlichkeit über Grenzen: [`lumina/README.md`](lumina/README.md).
