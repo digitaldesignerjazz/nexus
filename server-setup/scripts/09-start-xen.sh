@@ -20,7 +20,7 @@ if ! command -v yggdrasilctl >/dev/null 2>&1; then
   echo "yggdrasilctl nicht gefunden — Xen braucht den Yggdrasil-Daemon."
   exit 1
 fi
-PEER_COUNT=$(yggdrasilctl getPeers 2>/dev/null | grep -c 'Up' || true)
+PEER_COUNT=$(yggdrasilctl getPeers 2>/dev/null | grep -c '│ Up ' || true)
 echo "Yggdrasil-Peers Up: ${PEER_COUNT:-0}"
 if [ "${PEER_COUNT:-0}" -lt 1 ]; then
   echo "WARNUNG: keine Peers Up. Xen startet trotzdem (STANDBY)."

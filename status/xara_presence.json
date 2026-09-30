@@ -1,0 +1,10 @@
+{
+  "prototype": "xara",
+  "version": "1.0",
+  "node_id": "xara-hannover-01",
+  "status": "STANDBY",
+  "maturity": "experimental",
+  "started_at": "2026-09-29T05:57:58Z",
+  "ygg_peers_up": 21,
+  "substrate": "xen-protocol-1.0"
+}

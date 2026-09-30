@@ -1,79 +1,58 @@
-# QNet 1DEV Burn-Flow
+# QNet XCoin Burn-Flow (qmainnet)
 
-Dokumentation des Phase-1-Aktivierungsflusses fuer QNet-Knoten,
-integriert in das Nexus-Server-Setup.
+**Canonical network:** local **qmainnet** via Hannover control plane  
+**Base URL:** `http://127.0.0.1:8787/blockchain/network/qmainnet`  
+**Asset:** XCoin (not Solana 1DEV)
 
-## Adressen (Stand August 2026)
+> **DEPRECATED / HISTORICAL:** Solana Mainnet 1DEV mint `4R3DPW4BY97kJRfv8J5wgTtbDpoXpRv92W957tXMpump` and Solana RPC burn paths are **not** the active operator path. See archive note at the bottom.
 
-| Zweck | Adresse |
+## Endpoints
+
+| Action | Method / URL |
 |---|---|
-| 1DEV Mint (Mainnet) | `4R3DPW4BY97kJRfv8J5wgTtbDpoXpRv92W957tXMpump` |
-| Burn-Programm (Devnet v14.5) | `CCZSessk1TbWie6Ye2JX2cNEWHTEWxCwe5sLz8JaFriw` |
-| Solana-Incinerator | `1nc1nerator11111111111111111111111111111111` |
+| Status | `GET /blockchain/network/qmainnet/status` |
+| Networks | `GET /blockchain/networks` |
+| Active production | `GET /blockchain/active` |
+| Tokenomics | `GET /blockchain/network/qmainnet/tokenomics` |
+| Burn / transfer | `POST /blockchain/network/qmainnet/tx` |
 
-Quelle: [AIQnetLab/QNet-Blockchain](https://github.com/AIQnetLab/QNet-Blockchain) — `Tokenomics.md`, `docs/API_REFERENCE.md`.
+## Activation burn (FINAL locked tokenomics)
 
-## Preis (Phase 1)
+- Base activation burn: **1.0 XCoin**
+- Minimum: **0.1 XCoin**
+- Transfer / activation usage burn: **15 bps (0.15%)**
+- Burn sink: `1nc1nerator`
+- Founder activation pubkey: `4JkK7b9rNaVQnrYXHfuRUEmWnSgoJ2poXuv4ztF2NGz4`
 
-- Basis: **1.500 1DEV** fuer alle Knotentypen (light / full / super).
-- Dynamisch: sinkt um 150 1DEV pro 10 % verbrannter Supply, Minimum 300.
-- Formel: `price = max(1500 - floor(burn% / 10) * 150, 300)`.
-- Phase 2 (QNC) startet bei 90 % verbrannter Supply oder nach 5 Jahren.
-
-## Ablauf
-
-1. **Wallet** — QNet-Wallet-Extension (Chrome) oder Mobile-App oeffnen.
-2. **Burn** — 1DEV an Incinerator oder Burn-Programm senden. Betrag >= aktueller Preis.
-3. **Signatur notieren** — `BURN_TX = <solana_tx_signature>`.
-4. **Code erzeugen** — die Wallet erzeugt den Code *lokal*. Nur der Hash geht on-chain.
-5. **Registrieren** — Code an QNet-Node binden. Ein Wallet = ein Knoten. Code ist permanent.
-
-## Code-Format
-
-```
-QNET-XXXXXX-XXXXXX-XXXXXX   (25 Zeichen)
-|------|------|------|
-Typ+Zeit Wallet1 Wallet2+Entropie
-```
-
-Kryptografisch an `burn_tx_hash` und Wallet-Adresse gebunden.
-
-## API (Referenz)
-
-`POST /api/v1/generate-activation-code`
-
-```json
-{
-  "wallet_address": "Solana_oder_EON_Adresse",
-  "burn_tx_hash": "solana_burn_tx_signature",
-  "node_type": "light|full|super",
-  "burn_amount": 1350,
-  "phase": 1
-}
-```
-
-Antwort:
-
-```json
-{
-  "success": true,
-  "activation_code": "QNET-XXXXXX-XXXXXX-XXXXXX",
-  "node_type": "light",
-  "permanent": true
-}
-```
-
-> Der Endpunkt `api.qnet.network` im Skript `06-qnet-burn-flow.sh` ist ein
-> Platzhalter. Die echte Wallet nutzt ihre eigenen, signierten Endpunkte.
-> Niemand kann einen Aktivierungscode ohne echte Burn-TX erzeugen.
-
-## Skript
-
-`server-setup/scripts/06-qnet-burn-flow.sh` — ausfuehrbare Checkliste:
+## Burn TX example
 
 ```bash
-bash scripts/06-qnet-burn-flow.sh light <SOLANA_WALLET>
+curl -s -X POST http://127.0.0.1:8787/blockchain/network/qmainnet/tx \
+  -H 'Content-Type: application/json' \
+  -d '{"from":"4JkK7b9rNaVQnrYXHfuRUEmWnSgoJ2poXuv4ztF2NGz4","to":"1nc1nerator","amount":1.0,"asset":"XCoin","type":"BURN"}'
 ```
 
-Brennt nichts. Prueft Voraussetzungen, fragt Preis ab, gibt die manuelle
-Burn-Checkliste aus und versucht den Code-Request.
+Fund from treasury seed account if needed:
+
+```bash
+curl -s -X POST http://127.0.0.1:8787/blockchain/network/qmainnet/tx \
+  -H 'Content-Type: application/json' \
+  -d '{"from":"hannover-primary","to":"4JkK7b9rNaVQnrYXHfuRUEmWnSgoJ2poXuv4ztF2NGz4","amount":1,"asset":"XCoin","type":"TRANSFER"}'
+```
+
+## Operator script
+
+```bash
+bash server-setup/scripts/06-qnet-burn-flow.sh light 4JkK7b9rNaVQnrYXHfuRUEmWnSgoJ2poXuv4ztF2NGz4
+# optional live tiny burn:
+bash server-setup/scripts/06-qnet-burn-flow.sh light 4JkK7b9rNaVQnrYXHfuRUEmWnSgoJ2poXuv4ztF2NGz4 --burn 0.1
+```
+
+## Archive — Solana Mainnet 1DEV (DEPRECATED)
+
+Previous upstream QNet Phase-1 docs described burning **1DEV** on Solana Mainnet. That flow is retained here only as history and must not be used as the Nexus/Hannover active path:
+
+- 1DEV mint (historical): `4R3DPW4BY97kJRfv8J5wgTtbDpoXpRv92W957tXMpump`
+- Solana incinerator (historical reference): `1nc1nerator11111111111111111111111111111111`
+
+Operators follow **qmainnet XCoin** only.

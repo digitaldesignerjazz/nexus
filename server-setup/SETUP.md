@@ -64,3 +64,7 @@ Keine öffentlichen Ports ohne Reverse-Proxy und Auth.
 - Control Plane zuerst nur localhost.
 - Secrets nur in `.env` (chmod 600).
 - Root nur für systemd/Yggdrasil-TUN, sonst User `nexus`.
+
+## Blockchain (qmainnet)
+
+Sole active production network: **qmainnet** at `http://127.0.0.1:8787/blockchain/network/qmainnet/...`. Solana Mainnet is not used. See `docs/xcoin-tokenomics.md` and `docs/qnet-burn-flow.md`.

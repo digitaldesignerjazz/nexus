@@ -1,88 +1,86 @@
 #!/usr/bin/env bash
-# 06-qnet-burn-flow.sh — QNet Phase-1 Burn-Flow (Dokumentation + Checkliste)
-# Nexus / Esslinger Consulting — Sir Sven Normen
+# 06-qnet-burn-flow.sh — QNet qmainnet XCoin burn-flow (ACTIVE)
+# Nexus / Esslinger Consulting — Sir Sven Normen Eßlinger
+# Solana Mainnet 1DEV path is DEPRECATED — do not use.
 set -euo pipefail
 
-# ---------------------------------------------------------------------------
-# QNET 1DEV BURN-FLOW
-# Aktivierung eines QNet-Knotens durch Verbrennen von 1DEV auf Solana.
-# Quelle der Wahrheit: AIQnetLab/QNet-Blockchain (Tokenomics.md, API_REFERENCE.md)
-# Dieses Skript BRENNT NICHTS. Es dokumentiert den Ablauf und prueft die
-# Voraussetzungen. Der echte Burn laeuft ausschliesslich in der QNet-Wallet.
-# ---------------------------------------------------------------------------
+PLANE="${NEXUS_PLANE:-http://127.0.0.1:8787}"
+NETWORK="${NEXUS_NETWORK:-qmainnet}"
+ASSET="XCoin"
+INCINERATOR="1nc1nerator"
+BASE_COST="1.0"
+MIN_COST="0.1"
+TRANSFER_FEE_BURN_BPS=15
+DEFAULT_WALLET="4JkK7b9rNaVQnrYXHfuRUEmWnSgoJ2poXuv4ztF2NGz4"
 
-MINT="4R3DPW4BY97kJRfv8J5wgTtbDpoXpRv92W957tXMpump"          # 1DEV SPL Mint (Mainnet)
-BURN_CONTRACT="CCZSessk1TbWie6Ye2JX2cNEWHTEWxCwe5sLz8JaFriw" # Burn-Programm (Devnet v14.5)
-INCINERATOR="1nc1nerator11111111111111111111111111111111"     # Solana-Incinerator
-BASE_COST=1500                                                  # 1DEV, Phase 1, alle Knotentypen
-MIN_COST=300
-API_BASE="https://api.qnet.network"                            # Platzhalter — offizielle Wallet nutzt eigene Endpunkte
+do_burn=0
+burn_amount="$BASE_COST"
+pos=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --burn)
+      do_burn=1
+      if [[ "${2:-}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then burn_amount="$2"; shift 2; else shift 1; fi
+      ;;
+    --dry-run) do_burn=0; shift ;;
+    -h|--help)
+      echo "Usage: $0 [light|full|super] [WALLET] [--burn [amount]|--dry-run]"
+      exit 0
+      ;;
+    -*) echo "Unknown flag: $1" >&2; exit 2 ;;
+    *) pos+=("$1"); shift ;;
+  esac
+done
+node_type="${pos[0]:-light}"
+wallet="${pos[1]:-$DEFAULT_WALLET}"
 
-node_type="${1:-light}"   # light | full | super
-wallet="${2:-}"           # Solana-Adresse des Aktivierers
-
-echo "=== QNet 1DEV Burn-Flow ==="
+echo "=== QNet qmainnet XCoin Burn-Flow (ACTIVE) ==="
+echo "Network    : $NETWORK"
+echo "Plane      : $PLANE"
 echo "Knoten-Typ : $node_type"
-echo "Mint       : $MINT"
-echo "Burn-Prog  : $BURN_CONTRACT"
+echo "Wallet     : $wallet"
 echo "Incinerator: $INCINERATOR"
-echo "Basispreis : ${BASE_COST} 1DEV (sinkt dynamisch mit verbrannter Supply)"
+echo "Basispreis : ${BASE_COST} XCoin (min ${MIN_COST})"
+echo "Fee burn   : ${TRANSFER_FEE_BURN_BPS} bps on TRANSFER (durable model)"
+echo "NOTE       : Solana Mainnet is NOT used."
 echo
 
-# 1) Voraussetzungen
-echo "[1/5] Voraussetzungen"
-command -v solana >/dev/null 2>&1 || echo "  ! 'solana' CLI fehlt — nur fuer manuelle Burn-TX noetig"
-command -v curl  >/dev/null 2>&1 || { echo "  x curl fehlt"; exit 1; }
-echo "  + curl vorhanden"
+echo "[1/5] Control plane health"
+curl -fsS "$PLANE/health" >/tmp/nexus_burn_health.json
+python3 -c 'import json; d=json.load(open("/tmp/nexus_burn_health.json")); assert d.get("status")=="ok", d'
+echo "  + plane ok"
+echo
 
-# 2) Aktuellen Preis abfragen (oeffentliche API, falls erreichbar)
-echo "[2/5] Preisabfrage"
-price_json=$(curl -fsS "${API_BASE}/api/v1/activation/price?type=${node_type}" 2>/dev/null || true)
-if [[ -n "$price_json" ]]; then
-  echo "  + $price_json"
-else
-  echo "  ~ API nicht erreichbar — Fallback auf Basispreis ${BASE_COST} 1DEV"
-  echo "  Formel: price = max(1500 - floor(burn% / 10) * 150, 300)"
-fi
+echo "[2/5] Network status ($NETWORK)"
+curl -fsS "$PLANE/blockchain/network/${NETWORK}/status" >/tmp/nexus_burn_status.json
+python3 -c 'import json; d=json.load(open("/tmp/nexus_burn_status.json")); c=d.get("chain")or{}; print("  height",c.get("height"),"burned",c.get("burned_supply"),"circ",c.get("circulating_supply"))'
+echo
 
-# 3) Burn-Checkliste (manuell in der QNet-Wallet)
-echo "[3/5] Burn-Checkliste (QNet-Wallet Extension / Mobile App)"
-cat <<'EOF'
-  a) Wallet oeffnen -> Node Activation -> 1DEV Burn waehlen
-  b) Betrag >= aktueller Preis (mind. 300 1DEV, aktuell 1500)
-  c) Ziel: Incinerator 1nc1nerator...1111  ODER Burn-Programm
-  d) TX bestaetigen, Signatur notieren  ->  BURN_TX=<signature>
-  e) Code wird LOKAL in der Wallet erzeugt, nur der Hash geht on-chain
-EOF
+echo "[3/5] Active production check"
+curl -fsS "$PLANE/blockchain/active" >/tmp/nexus_burn_active.json
+python3 -c 'import json; d=json.load(open("/tmp/nexus_burn_active.json")); print("  active_network=",d.get("active_network")); assert d.get("active_network")=="qmainnet"'
+echo
 
-# 4) Aktivierungscode anfordern (POST /api/v1/generate-activation-code)
-echo "[4/5] Code-Generierung"
-if [[ -z "$wallet" ]]; then
-  echo "  ~ Keine Wallet-Adresse uebergeben."
-  echo "    Aufruf: $0 <light|full|super> <SOLANA_WALLET>"
-  echo "    Danach: curl -X POST ${API_BASE}/api/v1/generate-activation-code \\"
-  echo "      -H 'Content-Type: application/json' \\"
-  echo "      -d '{\"wallet_address\":\"$wallet\",\"burn_tx_hash\":\"$BURN_TX\",\"node_type\":\"$node_type\",\"burn_amount\":$BASE_COST,\"phase\":1}'"
-else
-  echo "  + Wallet: $wallet"
-  echo "  + Sende generate-activation-code Request ..."
-  curl -fsS -X POST "${API_BASE}/api/v1/generate-activation-code" \
+echo "[4/5] Burn checklist / execute"
+if [[ "$do_burn" == "1" ]]; then
+  echo "  -> LIVE BURN amount=${burn_amount} ${ASSET}"
+  curl -fsS -X POST "$PLANE/blockchain/network/${NETWORK}/tx" \
     -H "Content-Type: application/json" \
-    -d "{\"wallet_address\":\"${wallet}\",\"burn_tx_hash\":\"${BURN_TX:-}\",\"node_type\":\"${node_type}\",\"burn_amount\":${BASE_COST},\"phase\":1}" \
-    || echo "  ! Request fehlgeschlagen — API-Endpunkt ist Platzhalter, echte Wallet nutzt interne Endpunkte."
+    -d "{\"from\":\"${wallet}\",\"to\":\"${INCINERATOR}\",\"amount\":${burn_amount},\"asset\":\"${ASSET}\",\"type\":\"BURN\"}" \
+    | python3 -m json.tool
+else
+  cat <<CHECK
+  Dry-run only (pass --burn [amount] for live burn).
+  Example:
+    curl -s -X POST $PLANE/blockchain/network/${NETWORK}/tx \\
+      -H 'Content-Type: application/json' \\
+      -d '{"from":"${wallet}","to":"${INCINERATOR}","amount":${BASE_COST},"asset":"${ASSET}","type":"BURN"}'
+CHECK
 fi
-
-# 5) Code-Format und Bindung
-echo "[5/5] Code-Format"
-cat <<'EOF'
-  Format : QNET-XXXXXX-XXXXXX-XXXXXX  (25 Zeichen)
-           |------|------|------|
-           Typ+Zeit  Wallet1 Wallet2+Entropie
-  - Permanent, laeuft nie ab
-  - Kryptografisch an burn_tx_hash + Wallet gebunden
-  - Ein Wallet = ein Knoten
-EOF
-
 echo
-echo "Fertig. Echter Burn nur ueber die offizielle QNet-Wallet."
-echo "Quelle: https://github.com/AIQnetLab/QNet-Blockchain"
+
+echo "[5/5] Post status"
+curl -fsS "$PLANE/blockchain/network/${NETWORK}/status" \
+  | python3 -c 'import sys,json; d=json.load(sys.stdin); c=d.get("chain")or{}; print("  height",c.get("height"),"burned",c.get("burned_supply"),"balances_wallet", (c.get("balances")or{}).get("'"$wallet"'"))'
+echo
+echo "Fertig. Aktiver Pfad: qmainnet XCoin. Solana Mainnet = DEPRECATED."
