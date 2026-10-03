@@ -1,0 +1,93 @@
+# VistaNova Prototype 1.0 — Mesh Vision & Topology Observer ("the eye")
+# Version 1.0 — 2026-10-03 (DRAFT)
+# Experimental, non-production. Read-only observer on top of Yggdrasil + Xen.
+# Does NOT replace Yggdrasil, nxmesh, Xen, Xara or the control plane.
+
+prototype:
+  name: vistanova
+  version: "1.0"
+  codename: "VistaNova Prototype One Point"
+  status: DRAFT
+  maturity: experimental
+  node_id: vistanova-hannover-01
+  location: Hannover
+  host: hannover-primary
+
+runtime:
+  # One process via the shared prototype bot framework, so
+  # prototypes/prototype_supervisor.py and the prototype watchdog can see it.
+  framework: "/workspace/lumina-state/prototype_bot.py"
+  launcher: "/workspace/lumina-state/run-vista-nova-bot.sh"
+  bot_name: "Vista Nova"          # supervisor NAMES entry -> slug vista-nova
+  slug: vista-nova
+  role: vision-topology-observer
+  bind: "200:47dd:ce9e:2bc8:9a79:9a43:fa20:7079"   # hannover-primary Ygg address
+  port: 4252                       # same port as the existing Vista Nova soft-presence bot
+  status_json: "/workspace/lumina-state/prototypes/vista-nova.status.json"
+  agent_status: "/workspace/lumina-state/agents/vista-nova/status"
+  processes: 1
+
+heartbeat:
+  interval_secs: 30
+  topology_file: "status/topology.json"
+
+capabilities:
+  - topology_snapshot        # nodes, links, latency, uptime
+  - peer_latency_readout     # from yggdrasilctl, no own probes
+  - prototype_status_readout # SoilNova, Xara, control plane
+  # deliberately NO: mesh_routing, peer_discovery, peer_add/remove,
+  #                  key_generation, chain_account (owned by Yggdrasil / Xen / humans)
+
+sources:
+  # All read-only. Interval: every heartbeat (30 s).
+  yggdrasil:
+    endpoint: "unix:///var/run/yggdrasil/yggdrasil.sock"
+    commands:
+      - "yggdrasilctl -json getSelf"
+      - "yggdrasilctl -json getPeers"
+    timeout_ms: 3000
+  prototypes:
+    - name: soilnova
+      path: "/workspace/lumina-state/prototypes/soilnova.status.json"
+    - name: xara
+      path: "status/xara_presence.json"
+  control_plane:
+    url: "http://127.0.0.1:8787/status"
+    method: GET
+    timeout_ms: 3000
+
+topology:
+  output: "status/topology.json"
+  write_mode: atomic_replace     # write tmp file, then rename
+  stale_after_secs: 90           # a source older than this is marked stale
+  model:
+    nodes: [id, ygg_ipv6, public_key, kind, source, status, last_seen]
+    links: [from, to, uri, direction, state, latency_ms, uptime_s, rx_bytes, tx_bytes, cost]
+
+stage_2:
+  # Planned, NOT in scope of 1.0. Needs separate approval.
+  web_view:
+    enabled: false
+    listen: "127.0.0.1"           # localhost only
+    description: "read-only graph view of status/topology.json"
+  peer_health:
+    enabled: false
+    detect: [dead_peer, slow_peer]
+    suggestions_file: "status/vistanova_peer_suggestions.json"
+    apply: never_automatic        # human approval required for every change
+
+guardrails:
+  - no_production_traffic
+  - no_key_generation
+  - read_only_against_mesh
+  - no_routing
+  - no_peer_changes
+  - no_chain_account
+  - abort_on_source_error: false  # mark source as unavailable, keep observing
+
+notes: >
+  VistaNova is the eye of the Hannover swarm. It only looks: it reads
+  Yggdrasil, the prototype status files and the control plane, and draws
+  the map in status/topology.json. It never routes, never touches peers,
+  never creates keys and has no chain account.
+  This file is the prototype definition, not the runtime.

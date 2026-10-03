@@ -1,0 +1,90 @@
+# VistaNova Prototype 1.0
+
+Read-only vision and topology observer for the Hannover swarm ("the eye").
+
+Status: **DRAFT** · Maturity: experimental · Node: `vistanova-hannover-01`
+
+## Role
+
+VistaNova is the **eye** of the Nexus mesh. Every 30 seconds it reads the
+mesh state of `hannover-primary` and the status of the other prototypes and
+builds one topology map. It adds **no routing authority** and changes
+nothing. All real mesh work stays with Yggdrasil and Xen.
+
+## Files
+
+| Path | Purpose |
+|---|---|
+| `configs/vistanova-prototype-1.0.yaml` | Prototype definition |
+| `status/topology.json` | Runtime topology map (written every 30 s) |
+| `/workspace/lumina-state/prototype_bot.py` | Shared prototype bot framework (runtime) |
+| `/workspace/lumina-state/run-vista-nova-bot.sh` | Launcher (slug `vista-nova`, port 4252) |
+
+## Sources (read-only, every 30 s)
+
+| Source | What VistaNova takes from it |
+|---|---|
+| `yggdrasilctl -json getSelf` | Own node: IPv6, public key, routing table size |
+| `yggdrasilctl -json getPeers` | Links: URI, direction, state, latency, uptime, RX/TX, cost |
+| `prototypes/soilnova.status.json` | SoilNova node status and last heartbeat |
+| `status/xara_presence.json` | Xara node status |
+| `http://127.0.0.1:8787/status` | Control plane and layer status of hannover-primary |
+
+A source that fails or is older than 90 s is marked `stale` or
+`unavailable` in the map. VistaNova keeps running.
+
+## Output: `status/topology.json`
+
+```json
+{
+  "generated_at": "2026-10-03T13:15:00Z",
+  "observer": "vistanova-hannover-01",
+  "self": { "id": "hannover-primary", "ygg_ipv6": "200:47dd:...", "public_key": "dc11..." },
+  "nodes": [
+    { "id": "hannover-primary", "kind": "host", "status": "OPERATIONAL" },
+    { "id": "220:f022:...", "kind": "ygg-peer", "status": "up" },
+    { "id": "soilnova", "kind": "prototype", "status": "running", "last_seen": "..." },
+    { "id": "xara-hannover-01", "kind": "prototype", "status": "STANDBY" }
+  ],
+  "links": [
+    { "from": "hannover-primary", "to": "220:f022:...", "uri": "tls://ygg1.mk16.de:1338",
+      "direction": "out", "state": "up", "latency_ms": 98.7, "uptime_s": 11445 }
+  ],
+  "sources": { "yggdrasil": "ok", "soilnova": "ok", "xara": "ok", "control_plane": "ok" }
+}
+```
+
+The file is written atomically (temporary file, then rename).
+
+## Runtime
+
+One process through the shared `prototype_bot.py` framework, same as
+SoilNova. This keeps it visible to `prototypes/prototype_supervisor.py`
+(name `Vista Nova`, slug `vista-nova`) and to the prototype watchdog.
+The topology collector is an extension of that framework and is **not built
+yet**. Today the `vista-nova` bot is only a soft presence with a heartbeat.
+
+## Stage 2 (planned, not in scope)
+
+- **Web view:** read-only graph view of `status/topology.json`, bound to
+  `127.0.0.1` only.
+- **Peer health:** detects dead and slow peers and writes replacement
+  suggestions to `status/vistanova_peer_suggestions.json`. Nothing is applied
+  automatically. A human approves every change.
+
+Stage 2 needs separate approval.
+
+## Guardrails
+
+- Read-only against the mesh
+- No routing
+- No peer changes (no add, remove or replace)
+- No key generation
+- No production traffic
+- No chain account
+
+## Honesty
+
+This is a **prototype definition** in DRAFT, not a runtime. Until the
+collector exists in `prototype_bot.py`, VistaNova has no map, only a
+heartbeat. Without a live Yggdrasil daemon it stays blind: an eye, not a hand.
