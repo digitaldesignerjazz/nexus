@@ -26,7 +26,7 @@ fi
 
 # 2) Yggdrasil-Peers als Gesundheitscheck.
 if command -v yggdrasilctl >/dev/null 2>&1; then
-  PEER_COUNT=$(yggdrasilctl getPeers 2>/dev/null | grep -c 'Up' || true)
+  PEER_COUNT=$(yggdrasilctl getPeers 2>/dev/null | grep -c '│ Up ' || true)
   echo "Yggdrasil-Peers Up: ${PEER_COUNT:-0}"
   if [ "${PEER_COUNT:-0}" -lt 1 ]; then
     echo "WARNUNG: keine Peers Up. Xara bleibt STANDBY."
