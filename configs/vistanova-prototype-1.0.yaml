@@ -26,6 +26,7 @@ runtime:
   status_json: "/workspace/lumina-state/prototypes/vista-nova.status.json"
   agent_status: "/workspace/lumina-state/agents/vista-nova/status"
   processes: 1
+  collector: "server-setup/vistanova/topology_collector.py"   # stage 1 draft, not wired yet
 
 heartbeat:
   interval_secs: 30
@@ -60,6 +61,7 @@ topology:
   output: "status/topology.json"
   write_mode: atomic_replace     # write tmp file, then rename
   stale_after_secs: 90           # a source older than this is marked stale
+                                 # (prototype bots: max(90, 3 x --heartbeat-interval))
   model:
     nodes: [id, ygg_ipv6, public_key, kind, source, status, last_seen]
     links: [from, to, uri, direction, state, latency_ms, uptime_s, rx_bytes, tx_bytes, cost]

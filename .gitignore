@@ -99,3 +99,7 @@ server-setup/backups/
 mesh/noise-quic/target/
 *.bak-*
 *.bak
+
+# VistaNova runtime output (written by server-setup/vistanova/topology_collector.py)
+status/topology.json
+status/topology.json.tmp

@@ -16,7 +16,8 @@ nothing. All real mesh work stays with Yggdrasil and Xen.
 | Path | Purpose |
 |---|---|
 | `configs/vistanova-prototype-1.0.yaml` | Prototype definition |
-| `status/topology.json` | Runtime topology map (written every 30 s) |
+| `server-setup/vistanova/topology_collector.py` | Stage 1 collector (draft, read-only) |
+| `status/topology.json` | Runtime topology map (written every 30 s, git-ignored) |
 | `/workspace/lumina-state/prototype_bot.py` | Shared prototype bot framework (runtime) |
 | `/workspace/lumina-state/run-vista-nova-bot.sh` | Launcher (slug `vista-nova`, port 4252) |
 
@@ -30,8 +31,11 @@ nothing. All real mesh work stays with Yggdrasil and Xen.
 | `status/xara_presence.json` | Xara node status |
 | `http://127.0.0.1:8787/status` | Control plane and layer status of hannover-primary |
 
-A source that fails or is older than 90 s is marked `stale` or
-`unavailable` in the map. VistaNova keeps running.
+A source that fails is marked `unavailable`; one whose heartbeat is older
+than 90 s is marked `stale`. For a prototype bot with a longer
+`--heartbeat-interval` (SoilNova runs with 3600 s) the limit is
+3 × its interval, read from the bot's command line. Xara has no heartbeat,
+so its presence snapshot is judged by `started_at`. VistaNova keeps running.
 
 ## Output: `status/topology.json`
 
@@ -61,8 +65,20 @@ The file is written atomically (temporary file, then rename).
 One process through the shared `prototype_bot.py` framework, same as
 SoilNova. This keeps it visible to `prototypes/prototype_supervisor.py`
 (name `Vista Nova`, slug `vista-nova`) and to the prototype watchdog.
-The topology collector is an extension of that framework and is **not built
-yet**. Today the `vista-nova` bot is only a soft presence with a heartbeat.
+The stage 1 collector exists as a draft in
+`server-setup/vistanova/topology_collector.py`. It is **not wired** into
+`prototype_bot.py`, `start-stack.sh` or the watchdog yet. Today the
+`vista-nova` bot is still only a soft presence with a heartbeat.
+
+```bash
+# one-shot (manual check)
+python3 server-setup/vistanova/topology_collector.py --once
+# runtime mode (later, driven by the prototype bot)
+python3 server-setup/vistanova/topology_collector.py --loop 30
+```
+
+Overrides (environment): `VISTANOVA_CTRL_URL`, `VISTANOVA_SOILNOVA_JSON`,
+`VISTANOVA_XARA_JSON`, `VISTANOVA_YGG_ENDPOINT`, `VISTANOVA_STALE_AFTER_SECS`.
 
 ## Stage 2 (planned, not in scope)
 
@@ -86,5 +102,5 @@ Stage 2 needs separate approval.
 ## Honesty
 
 This is a **prototype definition** in DRAFT, not a runtime. Until the
-collector exists in `prototype_bot.py`, VistaNova has no map, only a
-heartbeat. Without a live Yggdrasil daemon it stays blind: an eye, not a hand.
+collector is wired into `prototype_bot.py`, VistaNova only draws a map when
+someone runs it by hand. Without a live Yggdrasil daemon it stays blind: an eye, not a hand.
