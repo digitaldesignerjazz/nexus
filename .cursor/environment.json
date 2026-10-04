@@ -1,0 +1,10 @@
+{
+  "name": "Nexus",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "control-plane",
+      "command": "bash server-setup/scripts/02-start-control-plane.sh"
+    }
+  ]
+}
